@@ -7,20 +7,25 @@ PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
 SELECT ?year (avg(?samePlace) as ?shareSamePlace) WHERE {
-  graph <https://iisg.amsterdam/links/graph/partnerToPartner/0-0/bride-groom>{
-    ?fatherBride owl:sameAs ?groom .
+  graph ?g {
+    ?fatherBride owl:sameAs ?fatherBride_asGroom .
+    ?fatherGroom owl:sameAs ?fatherGroom_asGroom .
   }
   
-  ?mar1 iisgv:fatherBride ?fatherBride ;
-		schema:location ?loc1 . 
+  ?mar1 iisgv:fatherBride ?fatherBride ; 
+        iisgv:fatherGroom ?fatherGroom ; 
+    schema:location ?loc1 . 
   
-  ?mar2 iisgv:groom ?groom ;
-		bio:date ?date ;
-		schema:location ?loc2 . 
+  ?mar2 iisgv:groom ?fatherBride_asGroom ;
+    bio:date ?date ;
+    schema:location ?loc2 . 
+  
+  ?mar3 iisgv:groom ?fatherGroom_asGroom ;
+        schema:location ?loc3 .
   
   filter(?date > "1840-01-01"^^xsd:date && ?date < "1910-01-01"^^xsd:date)
   
-  bind(if(?loc1 = ?loc2, 1, 0) as ?samePlace) . 
+  bind(if(?loc1 = ?loc2 || ?loc1 = ?loc3, 1, 0) as ?samePlace) . 
   bind(year(?date) as ?year) . 
 } 
 group by ?year
