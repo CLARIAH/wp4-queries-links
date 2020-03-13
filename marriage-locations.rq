@@ -1,0 +1,27 @@
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+PREFIX schema: <http://schema.org/>
+PREFIX iisgv: <https://iisg.amsterdam/links/vocab/>
+PREFIX bio: <http://purl.org/vocab/bio/0.1/>
+PREFIX owl: <http://www.w3.org/2002/07/owl#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+SELECT ?year (avg(?samePlace) as ?shareSamePlace) WHERE {
+  graph <https://iisg.amsterdam/links/graph/partnerToPartner/0-0/bride-groom>{
+    ?fatherBride owl:sameAs ?groom .
+  }
+  
+  ?mar1 iisgv:fatherBride ?fatherBride ;
+		schema:location ?loc1 . 
+  
+  ?mar2 iisgv:groom ?groom ;
+		bio:date ?date ;
+		schema:location ?loc2 . 
+  
+  filter(?date > "1840-01-01"^^xsd:date && ?date < "1910-01-01"^^xsd:date)
+  
+  bind(if(?loc1 = ?loc2, 1, 0) as ?samePlace) . 
+  bind(year(?date) as ?year) . 
+} 
+group by ?year
+order by ?year
