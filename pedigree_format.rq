@@ -1,0 +1,60 @@
+# - first go at LINKS data in pedigree format 
+# - not yet with deaths
+# - n_births to see if links are correct
+
+# work in progress
+
+PREFIX bif: <http://www.openlinksw.com/schemas/bif#>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX schema: <http://schema.org/>
+PREFIX person: <https://iisg.amsterdam/links/person/>
+PREFIX event: <https://iisg.amsterdam/links/event/>
+PREFIX bio: <http://purl.org/vocab/bio/0.1/>
+PREFIX iisgv: <https://iisg.amsterdam/links/vocab/>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+
+SELECT ?person ?sex ?n_births ?first_b_date ?b_loc ?father_id ?mother_id  ?n_mar ?first_m_date ?m_loc
+(bif:datediff('year', xsd:date(str(?first_b_date)),xsd:date(str(?first_m_date))) AS ?age_at_mar ) ?min_b_date_father ?n_birth_father
+?min_b_date_mother ?n_birth_mother
+
+    {
+
+  SELECT ?person (count(distinct(?birth)) as ?n_births) ?sex ?b_loc ?m_loc  ?father_id ?mother_id  
+  (min(?b_date) as ?first_b_date)  (min(?m_date) as ?first_m_date) (count(distinct(?mar)) as ?n_mar)
+  (min(?b_date_father) as ?min_b_date_father) (count(distinct(?birth_father)) as ?n_birth_father) 
+  (min(?b_date_mother) as ?min_b_date_mother) (count(distinct(?birth_mother)) as ?n_birth_mother) 
+
+WHERE {
+  #birth info
+    
+  ?birth a bio:Birth .
+  ?birth iisgv:newborn ?person .
+  ?person schema:gender ?sex .
+  ?birth bio:date ?b_date .
+  ?birth schema:location/iisgv:inMunicipality ?b_loc .
+  ?birth iisgv:father ?father_id .
+  ?birth iisgv:mother ?mother_id. 
+  
+  #marriage info
+  ?mar a bio:Marriage .
+  ?mar iisgv:groom | iisgv:bride ?person .
+  ?mar bio:date ?m_date .
+  ?mar schema:location/iisgv:inMunicipality ?m_loc .
+  ?mar iisgv:fatherGroom | iisgv:fatherBride ?father_id2 . # optional property path to include both sexes
+  ?mar iisgv:motherGroom | iisgv:motherBride ?mother_id2.  # could also opt for same _id as at birth, but then you lose the filter   														      option below
+    
+  FILTER(?father_id = ?father_id2) #link check, if id not same as birth, link = wrong or something else?
+  FILTER(?mother_id = ?mother_id2)	  
+ 
+  #parent info
+optional{  ?birth_father iisgv:newborn ?father_id2 .
+      ?birth_father bio:date ?b_date_father }. 
+optional{  ?birth_mother iisgv:newborn ?mother_id2 .
+      ?birth_mother bio:date ?b_date_mother }. 
+  
+
+    
+ 
+} }
